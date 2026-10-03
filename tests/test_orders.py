@@ -48,9 +48,9 @@ def test_public_guest_checkout_recalculates_server_prices(client):
 
     # Backend product 1 selling price is 60.0. Qty = 50 -> subtotal = 3000.0
     assert order["subtotal"] == 3000.0
-    # Delivery charge is 0 for subtotal >= 3000
-    assert order["delivery_charge"] == 0.0
-    assert order["total_amount"] == 3000.0
+    # Delivery charge is 500 for all orders
+    assert order["delivery_charge"] == 500.0
+    assert order["total_amount"] == 3500.0
     assert order["order_number"].startswith("ORD-")
     assert len(order["items"]) == 1
     assert order["items"][0]["unit_price"] == 60.0

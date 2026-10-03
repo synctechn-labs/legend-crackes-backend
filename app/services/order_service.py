@@ -97,11 +97,8 @@ class OrderService:
                     detail=f"Minimum order amount is ₹{int(settings.MIN_ORDER_AMOUNT):,}. Your subtotal is ₹{calculated_subtotal:,.2f}. Please add ₹{settings.MIN_ORDER_AMOUNT - calculated_subtotal:,.2f} more to proceed."
                 )
 
-            # Calculate delivery charge
-            if calculated_subtotal >= settings.FREE_DELIVERY_THRESHOLD:
-                delivery_charge = 0.0
-            else:
-                delivery_charge = settings.DEFAULT_DELIVERY_CHARGE
+            # Calculate delivery charge (₹500 flat for all orders)
+            delivery_charge = float(settings.DEFAULT_DELIVERY_CHARGE)
 
             # Calculate discount (e.g. festive discount or coupon threshold if applicable)
             discount_amount = 0.0
