@@ -257,5 +257,22 @@ class OrderService:
         audit_logger.info(f"Order #{order.order_number} extra discount set to {pct}% (-Rs.{extra_disc_amt}) by admin {admin_username}")
         return OrderResponse(**format_order_dict(order))
 
+    def delete_order(self, db: Session, order_id: int, admin_username: str) -> dict:
+        order = order_repo.get_by_id(db, order_id)
+        if not order:
+            raise HTTPException(status_code=404, detail="Order not found.")
+
+        ord_num = order.order_number
+        order_repo.delete(db, order)
+
+        try:
+            from app.services.analytics_service import invalidate_analytics_cache
+            invalidate_analytics_cache()
+        except Exception:
+            pass
+
+        audit_logger.info(f"Order #{ord_num} (ID {order_id}) deleted by admin {admin_username}")
+        return {"success": True, "message": f"Order #{order_id} deleted successfully."}
+
 
 order_service = OrderService()

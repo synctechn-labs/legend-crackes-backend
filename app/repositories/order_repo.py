@@ -64,5 +64,11 @@ class OrderRepository(BaseRepository[Order]):
         orders = items_query.order_by(desc(Order.created_at)).offset(offset).limit(limit).all()
         return orders, total
 
+    def delete(self, db: Session, order: Order) -> bool:
+        db.query(OrderItem).filter(OrderItem.order_id == order.id).delete(synchronize_session=False)
+        db.delete(order)
+        db.commit()
+        return True
+
 
 order_repo = OrderRepository()

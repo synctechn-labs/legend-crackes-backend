@@ -90,3 +90,20 @@ def apply_extra_discount(
         extra_discount_percentage=payload.extra_discount_percentage,
         admin_username=current_admin.username
     )
+
+
+@router.delete(
+    "/{id}",
+    summary="Delete Order (Admin)",
+    description="Permanently delete an order and its associated order items."
+)
+def delete_order(
+    id: int,
+    current_admin: AdminUser = Depends(get_current_admin),
+    db: Session = Depends(get_db)
+):
+    return order_service.delete_order(
+        db=db,
+        order_id=id,
+        admin_username=current_admin.username
+    )
