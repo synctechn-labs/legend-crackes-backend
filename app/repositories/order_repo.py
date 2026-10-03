@@ -37,13 +37,14 @@ class OrderRepository(BaseRepository[Order]):
         if status and status.strip() and status.strip().lower() != "all":
             base_query = base_query.filter(Order.order_status.ilike(status.strip()))
 
-        # Search filter (order number, customer phone, customer name)
+        # Search filter (order number, customer phone, customer alternate phone, customer name)
         if search and search.strip():
             term = f"%{search.strip()}%"
             base_query = base_query.filter(
                 or_(
                     Order.order_number.ilike(term),
                     Order.customer_phone.ilike(term),
+                    Order.customer_alternate_phone.ilike(term),
                     Order.customer_name.ilike(term)
                 )
             )

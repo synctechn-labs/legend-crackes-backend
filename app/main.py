@@ -32,6 +32,8 @@ def run_db_migrations():
         if "orders" in tables:
             columns = [c["name"] for c in inspector.get_columns("orders")]
             with engine.begin() as conn:
+                if "customer_alternate_phone" not in columns:
+                    conn.execute(text("ALTER TABLE orders ADD COLUMN customer_alternate_phone VARCHAR(20);"))
                 if "extra_discount_percentage" not in columns:
                     conn.execute(text("ALTER TABLE orders ADD COLUMN extra_discount_percentage NUMERIC(5, 2) DEFAULT 0.00;"))
                 if "extra_discount_amount" not in columns:
@@ -51,6 +53,14 @@ def run_db_migrations():
         logger.info("Database migration check completed successfully.")
     except Exception as e:
         logger.warning(f"Database migration check warning: {e}")
+
+
+# Run DB migration check on startup
+try:
+    run_db_migrations()
+except Exception as e:
+    logger.warning(f"Failed to run auto DB migrations: {e}")
+
 
 
 @asynccontextmanager
