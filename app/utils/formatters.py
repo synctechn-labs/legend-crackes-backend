@@ -11,11 +11,14 @@ def slugify(text: str) -> str:
     return text.strip("-")
 
 
-def generate_order_number() -> str:
-    """Generate professional e-commerce order number e.g. ORD-20260927-4829."""
+def generate_order_number(order_id: int = None) -> str:
+    """Generate order number e.g. CLC001, CLC011."""
+    if order_id is not None:
+        return f"CLC{int(order_id):03d}"
     today = datetime.now().strftime("%Y%m%d")
-    random_digits = random.randint(1000, 9999)
-    return f"ORD-{today}-{random_digits}"
+    random_digits = random.randint(100, 999)
+    return f"CLC{random_digits:03d}"
+
 
 
 def format_product_dict(prod) -> dict:
@@ -131,9 +134,17 @@ def format_order_dict(order) -> dict:
     final_total = round(total - extra_disc_amt, 2)
     adjusted_profit = round(order_profit_before_extra - extra_disc_amt, 2)
 
+    order_code = order.order_number
+    if not order_code or not str(order_code).startswith("CLC"):
+        if isinstance(order.id, int):
+            order_code = f"CLC{order.id:03d}"
+        else:
+            order_code = str(order.id)
+
     return {
-        "id": order.id,
-        "order_number": order.order_number,
+        "id": order_code,
+        "db_id": order.id,
+        "order_number": order_code,
         "customer_name": order.customer_name,
         "customer_phone": order.customer_phone,
         "customer_email": order.customer_email,
@@ -156,7 +167,7 @@ def format_order_dict(order) -> dict:
         "updated_at": order.updated_at,
         "items": items,
         # React frontend compatibility
-        "orderNumber": order.order_number,
+        "orderNumber": order_code,
         "status": order.order_status,
         "total": total,
         "extraDiscountPercentage": extra_disc_pct,

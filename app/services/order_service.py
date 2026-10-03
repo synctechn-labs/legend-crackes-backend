@@ -107,11 +107,9 @@ class OrderService:
             final_total = round(calculated_subtotal - discount_amount + delivery_charge, 2)
 
             # Generate unique order number
-            order_number = generate_order_number()
-
             # Create Order header record
             order = Order(
-                order_number=order_number,
+                order_number="CLC_TEMP",
                 customer_name=cust_name,
                 customer_phone=cust_phone,
                 customer_email=cust_email,
@@ -129,6 +127,7 @@ class OrderService:
             )
             db.add(order)
             db.flush()
+            order.order_number = f"CLC{order.id:03d}"
 
             # Associate items
             for oi in order_items_to_create:
