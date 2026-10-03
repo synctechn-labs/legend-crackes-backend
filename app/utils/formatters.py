@@ -141,12 +141,15 @@ def format_order_dict(order) -> dict:
         else:
             order_code = str(order.id)
 
+    alt_phone = getattr(order, "customer_alternate_phone", None)
+
     return {
         "id": order.id,
         "db_id": order.id,
         "order_number": order_code,
         "customer_name": order.customer_name or "Customer",
         "customer_phone": order.customer_phone or "N/A",
+        "customer_alternate_phone": alt_phone,
         "customer_email": order.customer_email,
         "address": order.address or "",
         "city": order.city or "",
@@ -177,6 +180,8 @@ def format_order_dict(order) -> dict:
         "customer": {
             "name": order.customer_name or "Customer",
             "phone": order.customer_phone or "N/A",
+            "alternatePhone": alt_phone,
+            "alternate_phone": alt_phone,
             "email": order.customer_email,
             "address": order.address or "",
             "city": order.city or "",

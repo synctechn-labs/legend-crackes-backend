@@ -26,6 +26,7 @@ class OrderService:
         # Validate customer details
         cust_name = (order_in.customer_name or "").strip()
         cust_phone = (order_in.customer_phone or "").strip()
+        cust_alt_phone = (order_in.customer_alternate_phone or (order_in.customer.alternatePhone if order_in.customer else None) or (order_in.customer.alternate_phone if order_in.customer else None) or "").strip() or None
         cust_address = (order_in.address or "").strip()
         cust_city = (order_in.city or "").strip()
         cust_state = (order_in.state or "").strip()
@@ -112,6 +113,7 @@ class OrderService:
                 order_number="CLC_TEMP",
                 customer_name=cust_name,
                 customer_phone=cust_phone,
+                customer_alternate_phone=cust_alt_phone,
                 customer_email=cust_email,
                 address=cust_address,
                 city=cust_city,

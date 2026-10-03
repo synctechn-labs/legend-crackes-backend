@@ -11,6 +11,7 @@ class Order(Base):
     order_number = Column(String(64), unique=True, nullable=False, index=True)
     customer_name = Column(String(150), nullable=False)
     customer_phone = Column(String(20), nullable=False, index=True)
+    customer_alternate_phone = Column(String(20), nullable=True)
     customer_email = Column(String(120), nullable=True)
     address = Column(Text, nullable=False)
     city = Column(String(100), nullable=False)

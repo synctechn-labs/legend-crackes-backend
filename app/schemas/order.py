@@ -25,6 +25,8 @@ class OrderItemInput(BaseModel):
 class CustomerDetails(BaseModel):
     name: str
     phone: str
+    alternate_phone: Optional[str] = None
+    alternatePhone: Optional[str] = None
     email: Optional[str] = None
     address: str
     city: str
@@ -36,6 +38,7 @@ class OrderCreate(BaseModel):
     # Support both flat and nested customer object
     customer_name: Optional[str] = None
     customer_phone: Optional[str] = None
+    customer_alternate_phone: Optional[str] = None
     customer_email: Optional[str] = None
     address: Optional[str] = None
     city: Optional[str] = None
@@ -55,6 +58,7 @@ class OrderCreate(BaseModel):
             if isinstance(cust, dict):
                 data.setdefault("customer_name", cust.get("name") or cust.get("customer_name"))
                 data.setdefault("customer_phone", cust.get("phone") or cust.get("customer_phone"))
+                data.setdefault("customer_alternate_phone", cust.get("alternatePhone") or cust.get("alternate_phone") or cust.get("customer_alternate_phone"))
                 data.setdefault("customer_email", cust.get("email") or cust.get("customer_email"))
                 data.setdefault("address", cust.get("address"))
                 data.setdefault("city", cust.get("city"))
@@ -86,6 +90,7 @@ class OrderResponse(BaseModel):
     order_number: str
     customer_name: str
     customer_phone: str
+    customer_alternate_phone: Optional[str] = None
     customer_email: Optional[str] = None
     address: str
     city: str
