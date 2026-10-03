@@ -82,7 +82,7 @@ class OrderItemResponse(BaseModel):
 
 
 class OrderResponse(BaseModel):
-    id: int
+    id: Any
     order_number: str
     customer_name: str
     customer_phone: str
@@ -102,8 +102,8 @@ class OrderResponse(BaseModel):
     payment_method: str
     payment_status: str
     order_status: str
-    created_at: datetime
-    updated_at: datetime
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
     items: List[OrderItemResponse] = []
 
     # Frontend convenience aliases
