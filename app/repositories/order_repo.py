@@ -12,12 +12,12 @@ class OrderRepository(BaseRepository[Order]):
 
     def get_by_id(self, db: Session, order_id: int) -> Optional[Order]:
         return db.query(Order).options(
-            joinedload(Order.items)
+            joinedload(Order.items).joinedload(OrderItem.product)
         ).filter(Order.id == order_id).first()
 
     def get_by_order_number(self, db: Session, order_number: str) -> Optional[Order]:
         return db.query(Order).options(
-            joinedload(Order.items)
+            joinedload(Order.items).joinedload(OrderItem.product)
         ).filter(Order.order_number == order_number.strip()).first()
 
     def query_orders(

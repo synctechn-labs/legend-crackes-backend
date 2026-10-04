@@ -39,13 +39,18 @@ class AnalyticsRepository:
 
         # 3. Profit calculation (EXCLUDING CANCELLED ORDERS)
         profit_query = db.query(
-            func.sum((OrderItem.unit_price - func.coalesce(Product.my_price, Product.original_price)) * OrderItem.quantity)
+            func.sum((OrderItem.unit_price - func.coalesce(Product.my_price, 0.0)) * OrderItem.quantity)
         ).join(Product, Product.id == OrderItem.product_id)\
          .join(Order, Order.id == OrderItem.order_id)\
          .filter(func.lower(Order.order_status) != "cancelled").scalar()
 
-        total_profit = float(profit_query) if profit_query is not None else 0.0
-        total_cost = round(total_revenue - total_profit, 2)
+        extra_discount_query = db.query(
+            func.sum(func.coalesce(Order.extra_discount_amount, 0.0))
+        ).filter(func.lower(Order.order_status) != "cancelled").scalar() or 0.0
+
+        raw_profit = float(profit_query) if profit_query is not None else 0.0
+        total_profit = round(max(0.0, raw_profit - float(extra_discount_query)), 2)
+        total_cost = round(max(0.0, total_revenue - total_profit), 2)
 
         # 4. Recent orders with preloaded items
         recent_orders = db.query(Order).options(

@@ -41,7 +41,7 @@ def format_product_dict(prod) -> dict:
         discount = 60
         orig_p = round(sell_p * 2.5, 2)
 
-    my_p = my_p if my_p > 0 else round(sell_p * 0.4, 2)
+    my_p = my_p if 0 < my_p < sell_p else round(sell_p * 0.4, 2)
     profit = round(sell_p - my_p, 2)
     unit_val = prod.unit or "Classic Legend Pack"
 
@@ -94,11 +94,12 @@ def format_order_dict(order) -> dict:
         sell_p = float(item.unit_price)
         prod_obj = getattr(item, "product", None)
         if prod_obj:
-            my_p = float(getattr(prod_obj, "my_price", None) or prod_obj.original_price or sell_p * 0.5)
+            my_p_val = float(getattr(prod_obj, "my_price", None) or 0.0)
+            my_p = my_p_val if my_p_val > 0 else round(sell_p * 0.4, 2)
             item_code = prod_obj.product_code
             item_img = prod_obj.image_url
         else:
-            my_p = sell_p * 0.5
+            my_p = round(sell_p * 0.4, 2)
             item_code = f"SKF-{item.id}"
             item_img = None
 
@@ -112,6 +113,8 @@ def format_order_dict(order) -> dict:
             "quantity": item.quantity,
             "unit_price": sell_p,
             "total_price": float(item.total_price),
+            "my_price": my_p,
+            "myPrice": my_p,
             "productName": item.product_name_snapshot,
             "name": item.product_name_snapshot,
             "code": item.code if hasattr(item, "code") else item_code,
