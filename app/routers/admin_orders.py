@@ -76,7 +76,7 @@ def update_order_status(
     "/{id}/extra-discount",
     response_model=OrderResponse,
     summary="Apply Admin Extra Discount from Profit (Admin)",
-    description="Apply an extra discount % on the order deducted directly from the profit."
+    description="Apply an extra discount % or flat amount on the order deducted directly from profit."
 )
 def apply_extra_discount(
     id: int,
@@ -88,6 +88,7 @@ def apply_extra_discount(
         db=db,
         order_id=id,
         extra_discount_percentage=payload.extra_discount_percentage,
+        extra_discount_amount=payload.extra_discount_amount,
         admin_username=current_admin.username
     )
 

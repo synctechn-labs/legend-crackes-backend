@@ -223,23 +223,41 @@ class OrderService:
         audit_logger.info(f"Order #{order.order_number} status changed: {old_status} -> {clean_status} by admin {admin_username}")
         return OrderResponse(**format_order_dict(order))
 
-    def update_extra_discount(self, db: Session, order_id: int, extra_discount_percentage: float, admin_username: str) -> OrderResponse:
+    def update_extra_discount(
+        self,
+        db: Session,
+        order_id: int,
+        admin_username: str,
+        extra_discount_percentage: Optional[float] = None,
+        extra_discount_amount: Optional[float] = None
+    ) -> OrderResponse:
         order = order_repo.get_by_id(db, order_id)
         if not order:
             raise HTTPException(status_code=404, detail="Order not found.")
-
-        pct = max(0.0, min(100.0, float(extra_discount_percentage)))
-        order.extra_discount_percentage = pct
 
         # Calculate profit before extra discount to compute extra discount amount
         total_profit = 0.0
         for item in order.items:
             sell_p = float(item.unit_price)
             prod_obj = getattr(item, "product", None)
-            my_p = float(getattr(prod_obj, "my_price", None) or prod_obj.original_price or sell_p * 0.5) if prod_obj else sell_p * 0.5
+            if prod_obj:
+                my_p_val = float(getattr(prod_obj, "my_price", None) or 0.0)
+                my_p = my_p_val if 0 < my_p_val < sell_p else round(sell_p * 0.4, 2)
+            else:
+                my_p = round(sell_p * 0.4, 2)
             total_profit += (sell_p - my_p) * item.quantity
 
-        extra_disc_amt = round(total_profit * (pct / 100.0), 2)
+        if extra_discount_amount is not None and float(extra_discount_amount) > 0:
+            extra_disc_amt = round(float(extra_discount_amount), 2)
+            pct = round((extra_disc_amt / total_profit) * 100.0, 2) if total_profit > 0 else 0.0
+        elif extra_discount_percentage is not None:
+            pct = max(0.0, min(100.0, float(extra_discount_percentage)))
+            extra_disc_amt = round(total_profit * (pct / 100.0), 2)
+        else:
+            pct = 0.0
+            extra_disc_amt = 0.0
+
+        order.extra_discount_percentage = pct
         order.extra_discount_amount = extra_disc_amt
         order.final_total_amount = round(float(order.total_amount) - extra_disc_amt, 2)
 

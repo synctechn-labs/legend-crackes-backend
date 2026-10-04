@@ -129,7 +129,8 @@ class OrderStatusUpdate(BaseModel):
 
 
 class OrderExtraDiscountUpdate(BaseModel):
-    extra_discount_percentage: float = Field(default=0.0, ge=0, le=100, description="Extra discount percentage (0-100%) deducted from profit")
+    extra_discount_percentage: Optional[float] = Field(default=None, ge=0, le=100, description="Extra discount percentage (0-100%) deducted from profit")
+    extra_discount_amount: Optional[float] = Field(default=None, ge=0, description="Extra discount flat amount in rupees deducted from profit")
 
 
 class OrderPaginatedResponse(BaseModel):
