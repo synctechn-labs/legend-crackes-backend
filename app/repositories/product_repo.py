@@ -95,7 +95,7 @@ class ProductRepository(BaseRepository[Product]):
         # Items query with category preloaded
         items_query = base_query.options(joinedload(Product.category))
 
-        # Sorting
+        # Sorting: Default to ascending Product.id so product #1 displays first (1, 2, 3...)
         sort_lower = (sort_by or "featured").lower()
         if sort_lower in ["price-asc", "price_low_high", "price_asc"]:
             items_query = items_query.order_by(asc(Product.selling_price), asc(Product.id))
@@ -105,12 +105,12 @@ class ProductRepository(BaseRepository[Product]):
             items_query = items_query.order_by(desc(Product.discount_percentage), asc(Product.id))
         elif sort_lower in ["name", "name_asc"]:
             items_query = items_query.order_by(asc(Product.name))
-        elif sort_lower in ["new", "latest"]:
-            items_query = items_query.order_by(desc(Product.created_at))
         elif sort_lower in ["stock_low", "low_stock"]:
             items_query = items_query.order_by(asc(Product.stock_quantity))
-        else:  # featured default
-            items_query = items_query.order_by(desc(Product.is_featured), desc(Product.id))
+        elif sort_lower in ["id_desc"]:
+            items_query = items_query.order_by(desc(Product.id))
+        else:  # featured / default / new / latest: start from Product ID 1 ascending
+            items_query = items_query.order_by(asc(Product.id))
 
         products = items_query.offset(offset).limit(limit).all()
         return products, total
