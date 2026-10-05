@@ -152,6 +152,14 @@ class OrderService:
             db.commit()
             db.refresh(order)
 
+            # Trigger Telegram mobile push notification exclusively (async non-blocking)
+            order_dict = format_order_dict(order)
+            try:
+                from app.services.telegram_service import send_telegram_order_alert
+                send_telegram_order_alert(order_dict)
+            except Exception as tel_err:
+                audit_logger.warn(f"Failed to dispatch Telegram alert: {tel_err}")
+
             audit_logger.info(
                 f"Order placed successfully: #{order.order_number} for customer {order.customer_phone}, Total: Rs.{order.total_amount}"
             )

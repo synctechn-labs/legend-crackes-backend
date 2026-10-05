@@ -47,6 +47,10 @@ class Settings(BaseSettings):
     FREE_DELIVERY_THRESHOLD: float = 3000.0
     MIN_ORDER_AMOUNT: float = 3000.0
 
+    # Telegram Instant Mobile Alerts (100% Free)
+    TELEGRAM_BOT_TOKEN: str = ""
+    TELEGRAM_CHAT_ID: str = ""
+
     @field_validator("DATABASE_URL", mode="before")
     @classmethod
     def sanitize_database_url(cls, v: str) -> str:
