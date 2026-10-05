@@ -34,7 +34,20 @@ class AnalyticsService:
         recent_orders_formatted = [OrderResponse(**format_order_dict(o)) for o in metrics["recent_orders"]]
         category_sales = analytics_repo.get_category_sales(db)
 
-        revenue_over_time = []
+        daily_trend = analytics_repo.get_revenue_trend(db, time_range="daily")
+        revenue_over_time = [
+            {
+                "day": d.get("period") or d.get("month") or "Day",
+                "period": d.get("period") or d.get("month") or "Day",
+                "revenue": float(d.get("revenue", 0.0)),
+                "orders": int(d.get("orders", 0))
+            }
+            for d in daily_trend
+        ]
+
+        if not revenue_over_time:
+            days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+            revenue_over_time = [{"day": d, "period": d, "revenue": 0.0, "orders": 0} for d in days]
 
         total_rev = metrics["total_revenue"]
         today_rev = metrics["today_revenue"]
@@ -90,7 +103,6 @@ class AnalyticsService:
         total_cost = metrics.get("total_cost", 0.0)
 
         monthly_trend = analytics_repo.get_revenue_trend(db, time_range=time_range)
-
         cat_sales = analytics_repo.get_category_sales(db)
         top_prods = analytics_repo.get_top_products(db)
 

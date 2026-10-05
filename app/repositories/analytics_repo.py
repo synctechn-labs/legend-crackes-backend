@@ -155,58 +155,47 @@ class AnalyticsRepository:
 
     def get_revenue_trend(self, db: Session, time_range: str = "monthly") -> List[Dict[str, Any]]:
         try:
-            is_sqlite = db.bind.dialect.name == "sqlite" if (db and hasattr(db, "bind") and db.bind) else False
-            if is_sqlite:
-                if time_range == "daily":
-                    trunc_col = func.strftime('%Y-%m-%d', Order.created_at)
-                elif time_range == "weekly":
-                    trunc_col = func.strftime('%Y-%W', Order.created_at)
-                else:
-                    trunc_col = func.strftime('%Y-%m', Order.created_at)
-            else:
-                if time_range == "daily":
-                    trunc_col = func.date_trunc('day', Order.created_at)
-                elif time_range == "weekly":
-                    trunc_col = func.date_trunc('week', Order.created_at)
-                else:
-                    trunc_col = func.date_trunc('month', Order.created_at)
+            orders = db.query(Order).filter(
+                func.lower(Order.order_status) != "cancelled"
+            ).order_by(Order.created_at).all()
 
-            results = db.query(
-                trunc_col.label("period_dt"),
-                func.sum(Order.total_amount).label("revenue"),
-                func.count(Order.id).label("orders")
-            ).filter(
-                Order.order_status.notin_(["Cancelled", "cancelled"])
-            ).group_by(trunc_col).order_by(trunc_col).all()
+            if not orders:
+                return []
+
+            grouped: Dict[str, Dict[str, Any]] = {}
+            for order in orders:
+                created = order.created_at or datetime.now()
+                if time_range == "daily":
+                    key = created.strftime("%b %d, %Y")
+                elif time_range == "weekly":
+                    key = f"Week {created.strftime('%U, %Y')}"
+                else:  # monthly
+                    key = created.strftime("%b %Y")
+
+                if key not in grouped:
+                    grouped[key] = {"period": key, "revenue": 0.0, "orders": 0}
+
+                grouped[key]["revenue"] += float(order.total_amount or 0.0)
+                grouped[key]["orders"] += 1
 
             trend = []
-            for r in results:
-                dt = r[0]
-                if dt:
-                    if isinstance(dt, str):
-                        fmt_str = dt
-                    elif time_range == "daily":
-                        fmt_str = dt.strftime("%Y-%m-%d")
-                    elif time_range == "weekly":
-                        fmt_str = f"Week {dt.strftime('%V, %Y')}"
-                    else:
-                        fmt_str = dt.strftime("%b %Y")
-                else:
-                    fmt_str = "N/A"
-
+            for key, val in grouped.items():
+                rev = round(val["revenue"], 2)
+                cnt = val["orders"]
                 trend.append({
-                    "period": fmt_str,
-                    "month": fmt_str,
-                    "date": fmt_str,
-                    "revenue": float(r[1] or 0.0),
-                    "sales": float(r[1] or 0.0),
-                    "orders": int(r[2] or 0),
-                    "orderCount": int(r[2] or 0)
+                    "period": key,
+                    "month": key,
+                    "date": key,
+                    "day": key,
+                    "revenue": rev,
+                    "sales": rev,
+                    "orders": cnt,
+                    "orderCount": cnt
                 })
 
             return trend
-        except Exception:
-            db.rollback()
+        except Exception as e:
+            print(f"Error computing revenue trend: {e}")
             return []
 
 
