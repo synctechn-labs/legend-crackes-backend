@@ -35,6 +35,7 @@ class CustomerDetails(BaseModel):
 
 
 class OrderCreate(BaseModel):
+    guest_id: Optional[str] = None
     # Support both flat and nested customer object
     customer_name: Optional[str] = None
     customer_phone: Optional[str] = None

@@ -4,6 +4,7 @@ from app.models.category import Category
 from app.models.product import Product
 from app.models.product_image import ProductImage
 from app.models.order import Order, OrderItem
+from app.models.customer import Customer
 
 __all__ = [
     "Base",
@@ -12,5 +13,6 @@ __all__ = [
     "Product",
     "ProductImage",
     "Order",
-    "OrderItem"
+    "OrderItem",
+    "Customer"
 ]

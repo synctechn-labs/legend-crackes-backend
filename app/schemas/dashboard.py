@@ -15,6 +15,10 @@ class DashboardStatsResponse(BaseModel):
     total_profit: Optional[float] = 0.0
     total_cost: Optional[float] = 0.0
     low_stock_count: int = 0
+    total_customers: Optional[int] = 0
+    new_customers: Optional[int] = 0
+    returning_customers: Optional[int] = 0
+    repeat_customer_rate: Optional[float] = 0.0
     low_stock_products: List[ProductResponse] = []
     recent_orders: List[OrderResponse] = []
     revenue_over_time: List[Dict[str, Any]] = []
@@ -30,6 +34,10 @@ class DashboardStatsResponse(BaseModel):
     totalProfit: Optional[float] = None
     totalCost: Optional[float] = None
     lowStockCount: Optional[int] = 0
+    totalCustomers: Optional[int] = 0
+    newCustomers: Optional[int] = 0
+    returningCustomers: Optional[int] = 0
+    repeatCustomerRate: Optional[float] = 0.0
     lowStockProducts: Optional[List[ProductResponse]] = None
     recentOrders: Optional[List[OrderResponse]] = None
     revenueOverTime: Optional[List[Dict[str, Any]]] = None

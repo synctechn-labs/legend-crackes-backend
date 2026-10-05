@@ -5,6 +5,7 @@ from sqlalchemy import func, desc, case, and_
 from app.models.order import Order, OrderItem
 from app.models.product import Product
 from app.models.category import Category
+from app.models.customer import Customer
 
 
 class AnalyticsRepository:
@@ -52,7 +53,17 @@ class AnalyticsRepository:
         total_profit = round(max(0.0, raw_profit - float(extra_discount_query)), 2)
         total_cost = round(max(0.0, total_revenue - total_profit), 2)
 
-        # 4. Recent orders with preloaded items
+        # 4. Customer statistics
+        total_customers = db.query(Customer).count()
+        subq = db.query(
+            Order.customer_id,
+            func.count(Order.id).label("cnt")
+        ).group_by(Order.customer_id).subquery()
+        returning_customers = db.query(func.count(subq.c.customer_id)).filter(subq.c.cnt > 1).scalar() or 0
+        new_customers = max(0, total_customers - returning_customers)
+        repeat_customer_rate = round((returning_customers / total_customers) * 100, 1) if total_customers > 0 else 0.0
+
+        # 5. Recent orders with preloaded items
         recent_orders = db.query(Order).options(
             joinedload(Order.items).joinedload(OrderItem.product)
         ).order_by(desc(Order.created_at)).limit(5).all()
@@ -69,6 +80,10 @@ class AnalyticsRepository:
             "total_profit": total_profit,
             "total_cost": total_cost,
             "low_stock_count": 0,
+            "total_customers": total_customers,
+            "new_customers": new_customers,
+            "returning_customers": returning_customers,
+            "repeat_customer_rate": repeat_customer_rate,
             "low_stock_products": [],
             "recent_orders": recent_orders
         }

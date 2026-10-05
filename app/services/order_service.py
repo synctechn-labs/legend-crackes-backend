@@ -7,6 +7,7 @@ from app.models.order import Order, OrderItem
 from app.models.product import Product
 from app.repositories.order_repo import order_repo
 from app.repositories.product_repo import product_repo
+from app.repositories.customer_repo import customer_repo
 from app.schemas.order import OrderCreate, OrderResponse, OrderPaginatedResponse, OrderStatusUpdate
 from app.utils.formatters import generate_order_number, format_order_dict
 from app.core.config import settings
@@ -104,10 +105,24 @@ class OrderService:
             discount_amount = 0.0
             final_total = round(calculated_subtotal - discount_amount + delivery_charge, 2)
 
+            # Resolve or create Customer (Guest ID + Phone matching)
+            customer = customer_repo.resolve_or_create_customer(
+                db=db,
+                guest_id=order_in.guest_id,
+                name=cust_name,
+                phone=cust_phone,
+                email=cust_email,
+                address=cust_address,
+                city=cust_city,
+                state=cust_state,
+                pincode=cust_pincode
+            )
+
             # Generate unique order number
             # Create Order header record
             order = Order(
                 order_number="CLC_TEMP",
+                customer_id=customer.id,
                 customer_name=cust_name,
                 customer_phone=cust_phone,
                 customer_alternate_phone=cust_alt_phone,

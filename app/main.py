@@ -20,18 +20,22 @@ from app.routers.admin_orders import router as admin_orders_router
 from app.routers.admin_inventory import router as admin_inventory_router
 from app.routers.admin_dashboard import router as admin_dashboard_router
 from app.routers.admin_revenue import router as admin_revenue_router
+from app.routers.admin_customers import router as admin_customers_router
 
 
 from sqlalchemy import inspect, text
 
 def run_db_migrations():
-    """Ensure newly added columns exist in existing database tables."""
+    """Ensure newly added columns and tables exist in existing database."""
     try:
+        Base.metadata.create_all(bind=engine)
         inspector = inspect(engine)
         tables = inspector.get_table_names()
         if "orders" in tables:
             columns = [c["name"] for c in inspector.get_columns("orders")]
             with engine.begin() as conn:
+                if "customer_id" not in columns:
+                    conn.execute(text("ALTER TABLE orders ADD COLUMN customer_id INTEGER REFERENCES customers(id);"))
                 if "customer_alternate_phone" not in columns:
                     conn.execute(text("ALTER TABLE orders ADD COLUMN customer_alternate_phone VARCHAR(20);"))
                 if "extra_discount_percentage" not in columns:
@@ -250,6 +254,7 @@ app.include_router(admin_orders_router, prefix=api_prefix)
 app.include_router(admin_inventory_router, prefix=api_prefix)
 app.include_router(admin_dashboard_router, prefix=api_prefix)
 app.include_router(admin_revenue_router, prefix=api_prefix)
+app.include_router(admin_customers_router, prefix=api_prefix)
 
 # 2. Mount directly without /api prefix
 app.include_router(auth_router)
@@ -261,3 +266,4 @@ app.include_router(admin_orders_router)
 app.include_router(admin_inventory_router)
 app.include_router(admin_dashboard_router)
 app.include_router(admin_revenue_router)
+app.include_router(admin_customers_router)
