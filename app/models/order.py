@@ -34,6 +34,9 @@ class Order(Base):
     extra_discount_amount = Column(Numeric(10, 2), default=0.00, nullable=False)
     final_total_amount = Column(Numeric(10, 2), nullable=True)
     
+    # Applied coupon code
+    coupon_code = Column(String(50), nullable=True, index=True)
+    
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False, index=True)
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
 

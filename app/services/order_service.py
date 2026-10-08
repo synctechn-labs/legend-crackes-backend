@@ -101,9 +101,28 @@ class OrderService:
             # Calculate delivery charge (₹500 flat for all orders)
             delivery_charge = float(settings.DEFAULT_DELIVERY_CHARGE)
 
-            # Calculate discount (e.g. festive discount or coupon threshold if applicable)
+            # Calculate coupon discount
             discount_amount = 0.0
-            final_total = round(calculated_subtotal - discount_amount + delivery_charge, 2)
+            applied_code = (getattr(order_in, "coupon_code", None) or getattr(order_in, "couponCode", None) or "").strip().upper()
+            if applied_code:
+                try:
+                    from app.repositories.coupon_repo import coupon_repo
+                    c_model = coupon_repo.get_by_code(db, applied_code)
+                    if c_model and c_model.is_active:
+                        pct = float(c_model.discount_percentage or 5.0)
+                        min_req = float(c_model.min_order_amount or 0.0)
+                        if calculated_subtotal >= min_req:
+                            discount_amount = round(calculated_subtotal * (pct / 100.0), 2)
+                            if c_model.max_discount_amount and float(c_model.max_discount_amount) > 0:
+                                discount_amount = min(discount_amount, float(c_model.max_discount_amount))
+                            coupon_repo.increment_usage(db, c_model.id)
+                except Exception as c_err:
+                    audit_logger.warning(f"Coupon application warning: {c_err}")
+
+            if discount_amount == 0.0 and getattr(order_in, "discount", None) and float(order_in.discount) > 0:
+                discount_amount = round(float(order_in.discount), 2)
+
+            final_total = round(max(0.0, calculated_subtotal - discount_amount + delivery_charge), 2)
 
             # Resolve or create Customer (Guest ID + Phone matching)
             customer = customer_repo.resolve_or_create_customer(
@@ -135,6 +154,7 @@ class OrderService:
                 discount=discount_amount,
                 delivery_charge=delivery_charge,
                 total_amount=final_total,
+                coupon_code=applied_code if applied_code else None,
                 payment_method=order_in.payment_method or "Cash on Delivery",
                 payment_status="Pending",
                 order_status="Pending"

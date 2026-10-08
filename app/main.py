@@ -21,6 +21,8 @@ from app.routers.admin_inventory import router as admin_inventory_router
 from app.routers.admin_dashboard import router as admin_dashboard_router
 from app.routers.admin_revenue import router as admin_revenue_router
 from app.routers.admin_customers import router as admin_customers_router
+from app.routers.coupons import router as coupons_router
+from app.routers.admin_coupons import router as admin_coupons_router
 
 
 from sqlalchemy import inspect, text
@@ -44,6 +46,8 @@ def run_db_migrations():
                     conn.execute(text("ALTER TABLE orders ADD COLUMN extra_discount_amount NUMERIC(10, 2) DEFAULT 0.00;"))
                 if "final_total_amount" not in columns:
                     conn.execute(text("ALTER TABLE orders ADD COLUMN final_total_amount NUMERIC(10, 2);"))
+                if "coupon_code" not in columns:
+                    conn.execute(text("ALTER TABLE orders ADD COLUMN coupon_code VARCHAR(50);"))
 
         if "products" in tables:
             columns = [c["name"] for c in inspector.get_columns("products")]
@@ -255,6 +259,8 @@ app.include_router(admin_inventory_router, prefix=api_prefix)
 app.include_router(admin_dashboard_router, prefix=api_prefix)
 app.include_router(admin_revenue_router, prefix=api_prefix)
 app.include_router(admin_customers_router, prefix=api_prefix)
+app.include_router(coupons_router, prefix=api_prefix)
+app.include_router(admin_coupons_router, prefix=api_prefix)
 
 # 2. Mount directly without /api prefix
 app.include_router(auth_router)
@@ -267,3 +273,5 @@ app.include_router(admin_inventory_router)
 app.include_router(admin_dashboard_router)
 app.include_router(admin_revenue_router)
 app.include_router(admin_customers_router)
+app.include_router(coupons_router)
+app.include_router(admin_coupons_router)

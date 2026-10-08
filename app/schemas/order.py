@@ -48,6 +48,10 @@ class OrderCreate(BaseModel):
     
     customer: Optional[CustomerDetails] = None
     
+    coupon_code: Optional[str] = None
+    couponCode: Optional[str] = None
+    discount: Optional[float] = 0.0
+    
     items: List[OrderItemInput] = Field(min_length=1, description="Order must contain at least 1 item")
     payment_method: str = "Cash on Delivery"
 

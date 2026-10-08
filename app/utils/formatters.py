@@ -160,6 +160,8 @@ def format_order_dict(order) -> dict:
         "pincode": order.pincode or "",
         "subtotal": subtotal,
         "discount": discount,
+        "coupon_code": getattr(order, "coupon_code", None),
+        "couponCode": getattr(order, "coupon_code", None),
         "delivery_charge": delivery,
         "deliveryCharge": delivery,
         "shippingFee": delivery,
