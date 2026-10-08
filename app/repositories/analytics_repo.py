@@ -21,14 +21,14 @@ class AnalyticsRepository:
         total_products = prod_res[0] or 0 if prod_res else 0
         active_products = int(prod_res[1] or 0) if prod_res else 0
 
-        # 2. Order & Revenue Stats (1 pass) - EXCLUDING CANCELLED ORDERS
+        # 2. Order & Revenue Stats (1 pass) - ONLY CONFIRMED/NON-PENDING AND NON-CANCELLED ORDERS COUNT TOWARDS REVENUE & PROFIT
         order_res = db.query(
-            func.sum(case((func.lower(Order.order_status) != "cancelled", 1), else_=0)).label("total_orders"),
+            func.sum(case((and_(func.lower(Order.order_status) != "cancelled", func.lower(Order.order_status) != "pending"), 1), else_=0)).label("total_orders"),
             func.sum(case((func.lower(Order.order_status) == "pending", 1), else_=0)).label("pending_orders"),
             func.sum(case((func.lower(Order.order_status) == "delivered", 1), else_=0)).label("completed_orders"),
-            func.sum(case((func.lower(Order.order_status) != "cancelled", Order.total_amount), else_=0)).label("total_revenue"),
-            func.sum(case((and_(func.lower(Order.order_status) != "cancelled", Order.created_at >= today_start), Order.total_amount), else_=0)).label("today_revenue"),
-            func.sum(case((and_(func.lower(Order.order_status) != "cancelled", Order.created_at >= week_start), Order.total_amount), else_=0)).label("weekly_revenue")
+            func.sum(case((and_(func.lower(Order.order_status) != "cancelled", func.lower(Order.order_status) != "pending"), Order.total_amount), else_=0)).label("total_revenue"),
+            func.sum(case((and_(func.lower(Order.order_status) != "cancelled", func.lower(Order.order_status) != "pending", Order.created_at >= today_start), Order.total_amount), else_=0)).label("today_revenue"),
+            func.sum(case((and_(func.lower(Order.order_status) != "cancelled", func.lower(Order.order_status) != "pending", Order.created_at >= week_start), Order.total_amount), else_=0)).label("weekly_revenue")
         ).first()
 
         total_orders = int(order_res[0] or 0) if order_res else 0
@@ -38,16 +38,16 @@ class AnalyticsRepository:
         today_revenue = float(order_res[4] or 0.0) if order_res else 0.0
         weekly_revenue = float(order_res[5] or 0.0) if order_res else 0.0
 
-        # 3. Profit calculation (EXCLUDING CANCELLED ORDERS)
+        # 3. Profit calculation (ONLY CONFIRMED ORDERS: EXCLUDING PENDING & CANCELLED)
         profit_query = db.query(
-            func.sum((OrderItem.unit_price - func.coalesce(Product.my_price, 0.0)) * OrderItem.quantity)
+            func.sum((OrderItem.unit_price - case((and_(Product.my_price != None, Product.my_price > 0), Product.my_price), else_=OrderItem.unit_price * 0.714)) * OrderItem.quantity)
         ).join(Product, Product.id == OrderItem.product_id)\
          .join(Order, Order.id == OrderItem.order_id)\
-         .filter(func.lower(Order.order_status) != "cancelled").scalar()
+         .filter(and_(func.lower(Order.order_status) != "cancelled", func.lower(Order.order_status) != "pending")).scalar()
 
         extra_discount_query = db.query(
             func.sum(func.coalesce(Order.extra_discount_amount, 0.0))
-        ).filter(func.lower(Order.order_status) != "cancelled").scalar() or 0.0
+        ).filter(and_(func.lower(Order.order_status) != "cancelled", func.lower(Order.order_status) != "pending")).scalar() or 0.0
 
         raw_profit = float(profit_query) if profit_query is not None else 0.0
         total_profit = round(max(0.0, raw_profit - float(extra_discount_query)), 2)
@@ -96,7 +96,7 @@ class AnalyticsRepository:
         ).join(Product, Product.id == OrderItem.product_id)\
          .join(Category, Category.id == Product.category_id)\
          .join(Order, Order.id == OrderItem.order_id)\
-         .filter(func.lower(Order.order_status) != "cancelled")\
+         .filter(and_(func.lower(Order.order_status) != "cancelled", func.lower(Order.order_status) != "pending"))\
          .group_by(Category.name)\
          .order_by(desc("sales_sum")).all()
 
@@ -130,7 +130,7 @@ class AnalyticsRepository:
             func.sum(OrderItem.total_price).label("product_revenue")
         ).join(OrderItem, OrderItem.product_id == Product.id)\
          .join(Order, Order.id == OrderItem.order_id)\
-         .filter(func.lower(Order.order_status) != "cancelled")\
+         .filter(and_(func.lower(Order.order_status) != "cancelled", func.lower(Order.order_status) != "pending"))\
          .outerjoin(Category, Category.id == Product.category_id)\
          .group_by(Product.id, Product.name, Product.product_code, Category.name, Product.selling_price)\
          .order_by(desc("units_sold"))\
@@ -156,7 +156,7 @@ class AnalyticsRepository:
     def get_revenue_trend(self, db: Session, time_range: str = "monthly") -> List[Dict[str, Any]]:
         try:
             orders = db.query(Order).filter(
-                func.lower(Order.order_status) != "cancelled"
+                and_(func.lower(Order.order_status) != "cancelled", func.lower(Order.order_status) != "pending")
             ).order_by(Order.created_at).all()
 
             if not orders:
