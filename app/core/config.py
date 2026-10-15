@@ -44,8 +44,10 @@ class Settings(BaseSettings):
 
     # Business Defaults
     DEFAULT_DELIVERY_CHARGE: float = 500.0
+    LOW_ORDER_DELIVERY_CHARGE: float = 200.0
+    DELIVERY_THRESHOLD: float = 3000.0
     FREE_DELIVERY_THRESHOLD: float = 3000.0
-    MIN_ORDER_AMOUNT: float = 3000.0
+    MIN_ORDER_AMOUNT: float = 999.0
 
     # Telegram Instant Mobile Alerts (100% Free)
     TELEGRAM_BOT_TOKEN: str = ""

@@ -285,7 +285,7 @@ def seed_database(target_product_count: int = 3000):
                         )
                     )
 
-                delivery = 0.0 if subtotal > 3000 else 500.0
+                delivery = 200.0 if subtotal < 3000 else 500.0
                 total_amt = round(subtotal + delivery, 2)
                 order_num = generate_order_number()
 

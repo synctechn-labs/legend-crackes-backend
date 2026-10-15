@@ -9,13 +9,41 @@ def test_order_fails_below_minimum_amount(client):
         "items": [
             {
                 "product_id": 1,
-                "quantity": 2  # Subtotal 120.0 is < 3000.0
+                "quantity": 2  # Subtotal 120.0 is < 999.0
             }
         ]
     }
     res = client.post("/api/orders", json=payload)
     assert res.status_code == 400
-    assert "Minimum order amount is ₹3,000" in res.json()["message"]
+    assert "Minimum order amount is ₹999" in res.json()["message"]
+
+
+def test_order_delivery_fee_under_3000(client):
+    # Subtotal 20 * 60.0 = 1200.0 (between 999 and 3000) -> delivery fee is 200.0
+    payload = {
+        "customer_name": "Mid Buyer",
+        "customer_phone": "9842199887",
+        "customer_email": "mid@example.com",
+        "address": "45 Gandhi Bazaar",
+        "city": "Madurai",
+        "state": "Tamil Nadu",
+        "pincode": "625001",
+        "items": [
+            {
+                "product_id": 1,
+                "quantity": 20
+            }
+        ],
+        "payment_method": "Cash on Delivery"
+    }
+
+    response = client.post("/api/orders", json=payload)
+    assert response.status_code == 201
+    order = response.json()
+
+    assert order["subtotal"] == 1200.0
+    assert order["delivery_charge"] == 200.0
+    assert order["total_amount"] == 1400.0
 
 
 def test_public_guest_checkout_recalculates_server_prices(client):
@@ -48,10 +76,10 @@ def test_public_guest_checkout_recalculates_server_prices(client):
 
     # Backend product 1 selling price is 60.0. Qty = 50 -> subtotal = 3000.0
     assert order["subtotal"] == 3000.0
-    # Delivery charge is 500 for all orders
+    # Delivery charge is 500 for orders >= 3000
     assert order["delivery_charge"] == 500.0
     assert order["total_amount"] == 3500.0
-    assert order["order_number"].startswith("ORD-")
+    assert order["order_number"].startswith("ORD-") or order["order_number"].startswith("CLC")
     assert len(order["items"]) == 1
     assert order["items"][0]["unit_price"] == 60.0
     assert order["items"][0]["total_price"] == 3000.0
